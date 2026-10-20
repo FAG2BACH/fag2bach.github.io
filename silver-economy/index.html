@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="color-scheme" content="light dark">
+<title>Pizarra Silver Economy</title>
+<style>
+/* Cabecera con el recuadro de la pizarra; debajo, tarjetas de grupo en columnas y a la derecha la lista de elegidas. */
+:root {
+  --bg: #F2F5F4;
+  --surface: #FFFFFF;
+  --chip: #F2F5F4;
+  --line: #D6DDDB;
+  --fg: #19232A;
+  --muted: #5B6A72;
+  --hl: #FFE66B;
+  --hl-line: #E3C535;
+  --hl-ink: #2A2300;
+  --frame: #2D50B8;
+  --danger: #B3261E;
+  --font-display: "Segoe Print", "Bradley Hand", "Marker Felt", "Chalkboard SE", "Comic Sans MS", cursive;
+  --font-body: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #12171B; --surface: #1A2127; --chip: #232B32; --line: #2F3A42;
+    --fg: #E9EEF0; --muted: #9AA8B0; --hl: #F1D54A; --hl-line: #C9AE28; --hl-ink: #241E00;
+    --frame: #7F9AF2; --danger: #F28B82;
+    color-scheme: dark;
+  }
+}
+
+* { box-sizing: border-box; }
+html { background: var(--bg); }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font-family: var(--font-body); font-size: 15px; line-height: 1.45;
+  padding-block: 24px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+button, input, select, textarea { font: inherit; color: inherit; }
+button { touch-action: manipulation; }
+:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
+.wrap { max-width: 1240px; margin: 0 auto; }
+
+.head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px 24px; margin-bottom: 20px; }
+.head h1 { font-family: var(--font-display); font-weight: 700; font-size: 42px; line-height: 1.05; margin: 0 0 8px; text-wrap: balance; }
+.stats { display: flex; flex-wrap: wrap; gap: 4px 16px; color: var(--muted); font-size: 14px; font-variant-numeric: tabular-nums; }
+.stats b { color: var(--fg); font-weight: 600; }
+.stats .hl-n { background: linear-gradient(transparent 55%, var(--hl) 55%); color: var(--fg); font-weight: 600; padding: 0 2px; }
+.frame { border: 2px solid var(--frame); color: var(--frame); font-family: var(--font-display); font-weight: 700; padding: 4px 16px 6px; text-align: center; line-height: 1.1; transform: rotate(-1.2deg); }
+.frame span { display: block; font-size: 21px; letter-spacing: .04em; }
+.frame small { display: block; font-size: 19px; }
+
+.controls { display: flex; flex-direction: column; gap: 12px; margin-bottom: 8px; }
+.row { display: flex; flex-wrap: wrap; gap: 10px 12px; align-items: center; }
+.field { display: flex; flex: 1 1 220px; min-width: 0; max-width: 420px; }
+.field input, .addform input { flex: 1; min-width: 0; height: 40px; padding: 0 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; }
+.field input::placeholder, .addform input::placeholder { color: var(--muted); }
+.addform { display: flex; flex: 1 1 260px; gap: 8px; max-width: 420px; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 40px; padding: 0 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; }
+.btn:hover { border-color: var(--muted); }
+.btn.primary { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.btn.link { border: 0; background: none; min-height: 32px; padding: 0 4px; color: var(--muted); font-weight: 500; text-decoration: underline; }
+.btn[disabled] { opacity: .45; cursor: default; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--surface); }
+.seg button { min-height: 38px; padding: 0 14px; border: 0; background: none; font-size: 14px; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--fg); color: var(--bg); font-weight: 600; }
+.seg .n { font-variant-numeric: tabular-nums; opacity: .75; font-size: 13px; }
+.hint { margin: 4px 0 18px; color: var(--muted); font-size: 14px; max-width: 72ch; }
+
+.layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; align-items: start; }
+@media (min-width: 980px) { .layout { grid-template-columns: minmax(0, 1fr) 300px; } .picked { position: sticky; top: 16px; max-height: calc(100vh - 32px); overflow: auto; } }
+.board { column-width: 290px; column-gap: 16px; }
+.group { break-inside: avoid; margin: 0 0 16px; padding: 14px 14px 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; }
+.group.over { outline: 2px dashed var(--fg); outline-offset: -2px; }
+.group-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+.group-head h2 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 22px; line-height: 1.1; text-wrap: balance; min-width: 0; }
+.group-head .meta { flex: none; color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.chips { display: flex; flex-wrap: wrap; gap: 7px; }
+
+.chip { display: inline-flex; align-items: stretch; max-width: 100%; min-height: 34px; background: var(--chip); border: 1px solid var(--line); border-radius: 6px; }
+.chip-main { display: inline-flex; align-items: center; min-width: 0; padding: 0 10px; border: 0; background: none; text-align: left; cursor: pointer; overflow-wrap: anywhere; }
+.chip-x { width: 30px; border: 0; background: none; color: var(--muted); font-size: 17px; line-height: 1; cursor: pointer; border-radius: 0 5px 5px 0; }
+.chip-x:hover { color: var(--danger); }
+.chip.is-elegida { background: var(--hl); border-color: var(--hl-line); color: var(--hl-ink); font-weight: 600; }
+.chip.is-elegida .chip-x { color: var(--hl-ink); opacity: .6; }
+.chip.is-elegida .chip-x:hover { opacity: 1; }
+.chip.is-descartada .chip-main { color: var(--muted); text-decoration: line-through; }
+.chip.is-descartada .chip-x { font-size: 15px; }
+.board[data-mode="organizar"] .chip-x { display: none; }
+.board[data-mode="organizar"] .chip-main { cursor: grab; padding-right: 12px; }
+
+.empty { padding: 28px 4px; color: var(--muted); max-width: 52ch; }
+.empty strong { display: block; color: var(--fg); font-size: 17px; margin-bottom: 4px; }
+
+.picked { padding: 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; }
+.picked h2 { display: flex; align-items: baseline; justify-content: space-between; margin: 0 0 12px; font-family: var(--font-display); font-weight: 700; font-size: 26px; line-height: 1.1; }
+.picked h2 .n { font-family: var(--font-body); font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; background: var(--hl); color: var(--hl-ink); padding: 2px 9px; border-radius: 99px; }
+.sel-group { margin-bottom: 12px; }
+.sel-group h3 { margin: 0 0 4px; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.sel-group ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.sel-group li { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.sel-group li span { background: linear-gradient(transparent 58%, var(--hl) 58%); padding: 0 2px; font-weight: 500; overflow-wrap: anywhere; }
+.sel-group li button { flex: none; width: 28px; height: 28px; border: 0; background: none; color: var(--muted); cursor: pointer; font-size: 16px; }
+.sel-group li button:hover { color: var(--danger); }
+.picked .none { color: var(--muted); font-size: 14px; margin: 0 0 12px; }
+.picked .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.picked .foot { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
+.picked .foot p { margin: 0 0 6px; }
+.picked textarea { width: 100%; height: 140px; margin-top: 10px; padding: 8px; background: var(--chip); border: 1px solid var(--line); border-radius: 6px; font-size: 13px; resize: vertical; }
+
+.sheet { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; padding: 16px; background: rgba(8, 12, 14, .5); }
+.sheet-card { width: min(420px, 100%); display: flex; flex-direction: column; gap: 6px; padding: 18px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+.sheet-card h3 { margin: 0 0 6px; font-family: var(--font-display); font-size: 24px; font-weight: 700; line-height: 1.1; }
+.sheet-card label { font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin-top: 6px; }
+.sheet-card input, .sheet-card select { height: 40px; padding: 0 10px; background: var(--chip); border: 1px solid var(--line); border-radius: 8px; }
+.sheet-card .row { margin-top: 14px; }
+
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 30; display: flex; align-items: center; gap: 14px; max-width: calc(100% - 32px); padding: 10px 14px; background: var(--fg); color: var(--bg); border-radius: 8px; font-size: 14px; }
+.toast button { background: none; border: 0; color: var(--hl); font-weight: 700; cursor: pointer; padding: 4px; }
+.toast button:focus-visible { outline-color: var(--bg); }
+[hidden] { display: none !important; }
+@media (prefers-reduced-motion: no-preference) { .toast { animation: up .18s ease-out; } @keyframes up { from { opacity: 0; transform: translate(-50%, 8px); } } }
+@media (max-width: 520px) { .head h1 { font-size: 34px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="head">
+    <div>
+      <h1>Pizarra Silver Economy</h1>
+      <div class="stats" id="stats" aria-live="polite"></div>
+    </div>
+    <div class="frame" aria-hidden="true"><span>SILVER ECONOMY</span><small>&gt; 55 años</small></div>
+  </header>
+
+  <section class="controls" aria-label="Controles">
+    <div class="row">
+      <div class="field"><input id="q" type="search" placeholder="Buscar una palabra" autocomplete="off" aria-label="Buscar una palabra"></div>
+      <form class="addform" id="addform"><input id="add" type="text" maxlength="60" placeholder="Añadir una palabra nueva" autocomplete="off" aria-label="Añadir una palabra nueva"><button class="btn" type="submit">Añadir</button></form>
+    </div>
+    <div class="row">
+      <div class="seg" role="group" aria-label="Qué palabras ver" id="views"></div>
+      <div class="seg" role="group" aria-label="Qué hace tocar una palabra" id="modes">
+        <button type="button" data-mode="elegir" aria-pressed="true">Elegir</button>
+        <button type="button" data-mode="organizar" aria-pressed="false">Organizar</button>
+      </div>
+    </div>
+  </section>
+  <p class="hint" id="hint"></p>
+
+  <div class="layout">
+    <main class="board" id="board" data-mode="elegir"></main>
+    <aside class="picked" id="picked" aria-label="Mis elegidas"></aside>
+  </div>
+</div>
+
+<div class="sheet" id="sheet" hidden>
+  <form class="sheet-card" id="sheet-form" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
+    <h3 id="sheet-title">Editar palabra</h3>
+    <label for="ed-texto">Palabra</label>
+    <input id="ed-texto" type="text" maxlength="60" required>
+    <label for="ed-grupo">Grupo</label>
+    <select id="ed-grupo"></select>
+    <div id="ed-nuevo-wrap" hidden>
+      <label for="ed-nuevo" style="display:block;margin-bottom:6px">Nombre del grupo nuevo</label>
+      <input id="ed-nuevo" type="text" maxlength="40" style="width:100%">
+    </div>
+    <div class="row">
+      <button class="btn primary" type="submit">Guardar</button>
+      <button class="btn" type="button" id="ed-descartar">Descartar</button>
+      <button class="btn" type="button" id="ed-cancelar">Cancelar</button>
+    </div>
+  </form>
+</div>
+
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script>
+(function () {
+  "use strict";
+  /* Palabras de la pizarra: id -> [palabra, grupo]. El grupo vacío es "Sin clasificar". */
+  var BASE = {"w001":["dentadura","Salud y cuerpo"],"w002":["gafas","Salud y cuerpo"],"w003":["vista","Salud y cuerpo"],"w004":["adelgazar","Salud y cuerpo"],"w005":["masajes","Salud y cuerpo"],"w006":["colesterol","Salud y cuerpo"],"w007":["medicamentos","Salud y cuerpo"],"w008":["pastillas","Salud y cuerpo"],"w009":["alzheimer","Salud y cuerpo"],"w010":["psicomotricidad","Salud y cuerpo"],"w011":["hospital","Salud y cuerpo"],"w012":["adicciones","Salud y cuerpo"],"w013":["farmacia","Salud y cuerpo"],"w014":["ozempic","Salud y cuerpo"],"w015":["dolor","Salud y cuerpo"],"w016":["lumbago","Salud y cuerpo"],"w017":["artrosis","Salud y cuerpo"],"w018":["enfermedad","Salud y cuerpo"],"w019":["tratamiento","Salud y cuerpo"],"w020":["dieta","Salud y cuerpo"],"w021":["ejercicio","Salud y cuerpo"],"w022":["engordar","Salud y cuerpo"],"w023":["salud","Salud y cuerpo"],"w024":["pelo","Salud y cuerpo"],"w025":["canas","Salud y cuerpo"],"w026":["injerto","Salud y cuerpo"],"w027":["cuidados","Cuidados y movilidad"],"w028":["asistencia","Cuidados y movilidad"],"w029":["residencia","Cuidados y movilidad"],"w030":["discapacidad","Cuidados y movilidad"],"w031":["conducir","Cuidados y movilidad"],"w032":["desaparición","Cuidados y movilidad"],"w033":["cansancio","Cuidados y movilidad"],"w034":["limitación","Cuidados y movilidad"],"w035":["lentitud","Cuidados y movilidad"],"w036":["muerte","Cuidados y movilidad"],"w037":["movilidad","Cuidados y movilidad"],"w038":["psicotécnico","Cuidados y movilidad"],"w039":["transporte","Cuidados y movilidad"],"w040":["autobús","Cuidados y movilidad"],"w041":["ayudar","Cuidados y movilidad"],"w042":["familia","Familia y relaciones"],"w043":["hijos","Familia y relaciones"],"w044":["hermanos","Familia y relaciones"],"w045":["padres","Familia y relaciones"],"w046":["matrimonio","Familia y relaciones"],"w047":["divorcio","Familia y relaciones"],"w048":["amor","Familia y relaciones"],"w049":["cariño","Familia y relaciones"],"w050":["amistades","Familia y relaciones"],"w051":["compañía","Familia y relaciones"],"w052":["compañerismo","Familia y relaciones"],"w053":["cena familiar","Familia y relaciones"],"w054":["árbol genealógico","Familia y relaciones"],"w055":["cenas","Familia y relaciones"],"w056":["juventud","Familia y relaciones"],"w057":["respeto","Familia y relaciones"],"w058":["lealtad","Familia y relaciones"],"w059":["empatía","Familia y relaciones"],"w060":["amigas","Familia y relaciones"],"w061":["convivencia","Familia y relaciones"],"w062":["generaciones","Familia y relaciones"],"w063":["apoyo","Familia y relaciones"],"w064":["simpatía","Familia y relaciones"],"w065":["reunir","Familia y relaciones"],"w066":["compañer@ de vida","Familia y relaciones"],"w067":["sentir","Emociones y soledad"],"w068":["delicadeza","Emociones y soledad"],"w069":["tranquilidad","Emociones y soledad"],"w070":["pasión","Emociones y soledad"],"w071":["disfrute","Emociones y soledad"],"w072":["descanso","Emociones y soledad"],"w073":["adaptación","Emociones y soledad"],"w074":["desesperación","Emociones y soledad"],"w075":["recuerdos","Emociones y soledad"],"w076":["mentalidad","Emociones y soledad"],"w077":["fortaleza","Emociones y soledad"],"w078":["happy people","Emociones y soledad"],"w079":["soledad","Emociones y soledad"],"w080":["aislados","Emociones y soledad"],"w081":["nostalgia","Emociones y soledad"],"w082":["desconexión","Emociones y soledad"],"w083":["relax","Emociones y soledad"],"w084":["positividad","Emociones y soledad"],"w085":["resiliencia","Emociones y soledad"],"w086":["amplitud","Emociones y soledad"],"w087":["pensiones","Dinero y trámites"],"w088":["subsidios","Dinero y trámites"],"w089":["pobreza","Dinero y trámites"],"w090":["burocracia","Dinero y trámites"],"w091":["propietario","Dinero y trámites"],"w092":["vivienda","Dinero y trámites"],"w093":["jubilación","Dinero y trámites"],"w094":["testamento","Dinero y trámites"],"w095":["cesta de la compra","Dinero y trámites"],"w096":["ahorros","Dinero y trámites"],"w097":["inversión","Dinero y trámites"],"w098":["subvenciones","Dinero y trámites"],"w099":["dinero","Dinero y trámites"],"w100":["riqueza","Dinero y trámites"],"w101":["estafados","Dinero y trámites"],"w102":["retiro","Dinero y trámites"],"w103":["riesgo","Dinero y trámites"],"w104":["herencia","Dinero y trámites"],"w105":["experiencia","Experiencia y saber"],"w106":["conocimiento","Experiencia y saber"],"w107":["sabiduría","Experiencia y saber"],"w108":["mentoría","Experiencia y saber"],"w109":["maestros","Experiencia y saber"],"w110":["enseñanzas","Experiencia y saber"],"w111":["enseñar","Experiencia y saber"],"w112":["consejos","Experiencia y saber"],"w113":["observación","Experiencia y saber"],"w114":["actualización","Experiencia y saber"],"w115":["idiomas","Experiencia y saber"],"w116":["lectura","Experiencia y saber"],"w117":["referentes","Experiencia y saber"],"w118":["expertos","Experiencia y saber"],"w119":["consultores","Experiencia y saber"],"w120":["líder","Experiencia y saber"],"w121":["formación","Experiencia y saber"],"w122":["memoria","Experiencia y saber"],"w123":["enciclopedia","Experiencia y saber"],"w124":["literatura","Experiencia y saber"],"w125":["refranes","Experiencia y saber"],"w126":["recomendación","Experiencia y saber"],"w127":["ejemplo","Experiencia y saber"],"w128":["veteranía","Experiencia y saber"],"w129":["criterio","Experiencia y saber"],"w130":["objetividad","Experiencia y saber"],"w131":["argumentos","Experiencia y saber"],"w132":["discusiones","Experiencia y saber"],"w133":["botánica","Experiencia y saber"],"w134":["morfología","Experiencia y saber"],"w135":["autoconocimiento","Experiencia y saber"],"w136":["senior","Experiencia y saber"],"w137":["legado","Experiencia y saber"],"w138":["vivencias","Experiencia y saber"],"w139":["carácter","Experiencia y saber"],"w140":["personalización","Trabajo y emprender"],"w141":["trabajo","Trabajo y emprender"],"w142":["compromiso","Trabajo y emprender"],"w143":["responsabilidad","Trabajo y emprender"],"w144":["organización","Trabajo y emprender"],"w145":["innovar","Trabajo y emprender"],"w146":["inventos","Trabajo y emprender"],"w147":["experimentar","Trabajo y emprender"],"w148":["problemas","Trabajo y emprender"],"w149":["tecnologías","Tecnología y servicios"],"w150":["compra online","Tecnología y servicios"],"w151":["servicios","Tecnología y servicios"],"w152":["rapidez","Tecnología y servicios"],"w153":["móvil","Tecnología y servicios"],"w154":["redes","Tecnología y servicios"],"w155":["seguridad","Tecnología y servicios"],"w156":["cerveza","Comida y bar"],"w157":["chupitos","Comida y bar"],"w158":["palillo","Comida y bar"],"w159":["queso","Comida y bar"],"w160":["matcha","Comida y bar"],"w161":["croquetas","Comida y bar"],"w162":["vino","Comida y bar"],"w163":["cocinar","Comida y bar"],"w164":["gastronomía","Comida y bar"],"w165":["vaso de tubo","Comida y bar"],"w166":["recetas","Comida y bar"],"w167":["pan","Comida y bar"],"w168":["alimentar","Comida y bar"],"w169":["bar","Comida y bar"],"w170":["Julio Iglesias","Ocio y cultura popular"],"w171":["Rafael","Ocio y cultura popular"],"w172":["crucero","Ocio y cultura popular"],"w173":["clubs","Ocio y cultura popular"],"w174":["ajedrez","Ocio y cultura popular"],"w175":["juegos","Ocio y cultura popular"],"w176":["bicicleta","Ocio y cultura popular"],"w177":["hobbies","Ocio y cultura popular"],"w178":["ocio","Ocio y cultura popular"],"w179":["Benidorm","Ocio y cultura popular"],"w180":["Dc10","Ocio y cultura popular"],"w181":["deporte","Ocio y cultura popular"],"w182":["tauromaquia","Ocio y cultura popular"],"w183":["flamenco","Ocio y cultura popular"],"w184":["Lola Flores","Ocio y cultura popular"],"w185":["telenovela","Ocio y cultura popular"],"w186":["siesta","Ocio y cultura popular"],"w187":["viajes","Ocio y cultura popular"],"w188":["petanca","Ocio y cultura popular"],"w189":["caza","Ocio y cultura popular"],"w190":["coser","Ocio y cultura popular"],"w191":["cartas","Ocio y cultura popular"],"w192":["arte","Ocio y cultura popular"],"w193":["balneario","Ocio y cultura popular"],"w194":["agricultura","Pueblo y rural"],"w195":["pueblos","Pueblo y rural"],"w196":["campo","Pueblo y rural"],"w197":["rural","Pueblo y rural"],"w198":["España","Pueblo y rural"],"w199":["España vaciada","Pueblo y rural"],"w200":["despoblación","Pueblo y rural"],"w201":["emigración","Pueblo y rural"],"w202":["población","Pueblo y rural"],"w203":["Castilla y León","Pueblo y rural"],"w204":["abastecimiento","Pueblo y rural"],"w205":["política","Sociedad y política"],"w206":["justicia","Sociedad y política"],"w207":["ideología","Sociedad y política"],"w208":["terrorismo","Sociedad y política"],"w209":["jerarquía","Sociedad y política"],"w210":["violencia","Sociedad y política"],"w211":["imperio","Sociedad y política"],"w212":["DIOS","Tradiciones y fe"],"w213":["tradición","Tradiciones y fe"],"w214":["costumbres","Tradiciones y fe"],"w215":["cultura","Tradiciones y fe"],"w216":["Semana Santa","Tradiciones y fe"],"w217":["rutina","Tradiciones y fe"],"w218":["expresiones","Tradiciones y fe"],"w219":["Nochevieja","Tradiciones y fe"],"w220":["fe","Tradiciones y fe"],"w221":["religión","Tradiciones y fe"],"w222":["cristianismo","Tradiciones y fe"],"w223":["pecado","Tradiciones y fe"],"w224":["capitán",""],"w225":["tiempo",""],"w226":["tacón",""],"w227":["únicos",""]};
+  var KEY = "fag2bach-silver-economy-v1";
+  var GROUP_ORDER = ["Salud y cuerpo", "Cuidados y movilidad", "Familia y relaciones", "Emociones y soledad", "Dinero y trámites", "Experiencia y saber", "Trabajo y emprender", "Tecnología y servicios", "Comida y bar", "Ocio y cultura popular", "Pueblo y rural", "Sociedad y política", "Tradiciones y fe"];
+  var NONE = "Sin clasificar";
+
+  var $ = function (s) { return document.querySelector(s); };
+  var esc = function (s) { return String(s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); };
+  var norm = function (s) { return String(s).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim(); };
+  var gname = function (g) { return g || NONE; };
+
+  /* Lo que cambia la persona (estado, grupo, texto, palabras nuevas) se guarda en este navegador. */
+  var saved = { w: {}, ui: {} }, canStore = true, warned = false;
+  try { var raw = localStorage.getItem(KEY); if (raw) saved = JSON.parse(raw) || saved; } catch (e) { canStore = false; }
+  saved.w = saved.w || {}; saved.ui = saved.ui || {};
+  function persist() {
+    try { localStorage.setItem(KEY, JSON.stringify(saved)); }
+    catch (e) { canStore = false; if (!warned) { warned = true; toast("Este navegador no permite guardar. Copia o descarga tu lista antes de cerrar."); } }
+  }
+
+  var ui = { view: saved.ui.view || "todas", mode: saved.ui.mode || "elegir", q: "", confirmReset: false };
+  var editingId = null, toastTimer = null, downloadUrl = null;
+
+  function words() {
+    var out = {}, id;
+    for (id in BASE) out[id] = { texto: BASE[id][0], grupo: BASE[id][1], estado: "" };
+    for (id in saved.w) out[id] = Object.assign({}, out[id], saved.w[id]);
+    return out;
+  }
+  function list() { var w = words(); return Object.keys(w).map(function (id) { return Object.assign({ id: id }, w[id]); }); }
+
+  function apply(changes) {
+    for (var id in changes) saved.w[id] = Object.assign(saved.w[id] || {}, changes[id]);
+    persist(); render();
+  }
+  function patch(changes, message) {
+    var cur = words(), prev = {};
+    for (var id in changes) { prev[id] = {}; for (var k in changes[id]) prev[id][k] = cur[id] && cur[id][k] != null ? cur[id][k] : ""; }
+    apply(changes);
+    if (message) toast(message, function () { apply(prev); hideToast(); });
+  }
+  function saveUi() { saved.ui = { view: ui.view, mode: ui.mode }; persist(); }
+
+  function visible(w) {
+    var s = w.estado || "";
+    if (ui.view === "todas" && s === "descartada") return false;
+    if (ui.view === "elegidas" && s !== "elegida") return false;
+    if (ui.view === "descartadas" && s !== "descartada") return false;
+    if (ui.q && norm(w.texto).indexOf(norm(ui.q)) < 0) return false;
+    return true;
+  }
+  function groupRank(g) { if (!g) return 1e6; var i = GROUP_ORDER.indexOf(g); return i < 0 ? 1000 : i; }
+  function byGroup(items) {
+    var m = {};
+    items.forEach(function (w) { var g = w.grupo || ""; (m[g] = m[g] || []).push(w); });
+    return Object.keys(m).sort(function (a, b) { return groupRank(a) - groupRank(b) || a.localeCompare(b, "es"); }).map(function (g) {
+      return { name: g, items: m[g].sort(function (a, b) { return a.texto.localeCompare(b.texto, "es"); }) };
+    });
+  }
+
+  function render() {
+    var f = document.activeElement, keep = f && f.dataset && f.dataset.act ? { act: f.dataset.act, id: f.dataset.id } : null;
+    var all = list();
+    var nTodas = all.filter(function (w) { return w.estado !== "descartada"; }).length;
+    var nEleg = all.filter(function (w) { return w.estado === "elegida"; }).length;
+    var nDesc = all.filter(function (w) { return w.estado === "descartada"; }).length;
+
+    $("#stats").innerHTML = "<span><b>" + nTodas + "</b> palabras en juego</span><span class=\"hl-n\">" + nEleg + " elegidas</span><span>" + nDesc + " descartadas</span>";
+    $("#views").innerHTML = [["todas", "Todas", nTodas], ["elegidas", "Elegidas", nEleg], ["descartadas", "Descartadas", nDesc]].map(function (v) {
+      return "<button type=\"button\" data-view=\"" + v[0] + "\" aria-pressed=\"" + (ui.view === v[0]) + "\">" + v[1] + " <span class=\"n\">" + v[2] + "</span></button>";
+    }).join("");
+    document.querySelectorAll("#modes button").forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.mode === ui.mode)); });
+    $("#hint").textContent = ui.view === "descartadas"
+      ? "Estas palabras están fuera del juego. Toca una para devolverla."
+      : ui.mode === "elegir"
+        ? "Toca una palabra para elegirla (se marca en amarillo). La × la descarta. Tus cambios se guardan en este navegador."
+        : "Toca una palabra para editarla o cambiarla de grupo. En ordenador también puedes arrastrarla a otro grupo.";
+
+    renderBoard(all);
+    renderPicked(all);
+    if (keep) { var el = document.querySelector("[data-act=\"" + keep.act + "\"][data-id=\"" + keep.id + "\"]"); if (el) el.focus(); }
+  }
+
+  function chip(w) {
+    var s = w.estado || "", cls = s === "elegida" ? " is-elegida" : s === "descartada" ? " is-descartada" : "";
+    var act = ui.view === "descartadas" ? "restore" : ui.mode === "organizar" ? "edit" : "pick";
+    var pressed = act === "pick" ? " aria-pressed=\"" + (s === "elegida") + "\"" : "";
+    var x = s === "descartada"
+      ? "<button type=\"button\" class=\"chip-x\" data-act=\"restore\" data-id=\"" + w.id + "\" aria-label=\"Devolver " + esc(w.texto) + "\" title=\"Devolver\">↺</button>"
+      : "<button type=\"button\" class=\"chip-x\" data-act=\"drop\" data-id=\"" + w.id + "\" aria-label=\"Descartar " + esc(w.texto) + "\" title=\"Descartar\">×</button>";
+    return "<span class=\"chip" + cls + "\" draggable=\"true\" data-id=\"" + w.id + "\"><button type=\"button\" class=\"chip-main\" data-act=\"" + act + "\" data-id=\"" + w.id + "\"" + pressed + ">" + esc(w.texto) + "</button>" + x + "</span>";
+  }
+
+  function renderBoard(all) {
+    var board = $("#board");
+    board.dataset.mode = ui.mode;
+    var groups = byGroup(all.filter(visible));
+    if (!groups.length) {
+      var msg = ui.q ? "Ninguna palabra coincide con «" + esc(ui.q) + "»." : ui.view === "elegidas" ? "Todavía no has elegido ninguna. Vuelve a «Todas» y toca las palabras que más importan." : ui.view === "descartadas" ? "No has descartado ninguna palabra." : "No quedan palabras en juego.";
+      board.innerHTML = "<div class=\"empty\"><strong>Nada que mostrar</strong>" + msg + "</div>"; return;
+    }
+    board.innerHTML = groups.map(function (g) {
+      var eleg = g.items.filter(function (w) { return w.estado === "elegida"; }).length;
+      return "<section class=\"group\" data-group=\"" + esc(g.name) + "\"><div class=\"group-head\"><h2>" + esc(gname(g.name)) + "</h2><span class=\"meta\">" + g.items.length + (eleg ? " · " + eleg + " elegidas" : "") + "</span></div><div class=\"chips\">" + g.items.map(chip).join("") + "</div></section>";
+    }).join("");
+  }
+
+  function pickedText(all) {
+    var sel = all.filter(function (w) { return w.estado === "elegida"; });
+    var md = "# Palabras elegidas · Silver Economy (>55 años)\n\n";
+    byGroup(sel).forEach(function (g) { md += "## " + gname(g.name) + "\n" + g.items.map(function (w) { return "- " + w.texto; }).join("\n") + "\n\n"; });
+    return { n: sel.length, md: md.trim() + "\n", groups: byGroup(sel) };
+  }
+  function renderPicked(all) {
+    var p = pickedText(all), el = $("#picked");
+    var body = p.n ? p.groups.map(function (g) {
+      return "<div class=\"sel-group\"><h3>" + esc(gname(g.name)) + "</h3><ul>" + g.items.map(function (w) {
+        return "<li><span>" + esc(w.texto) + "</span><button type=\"button\" data-act=\"unpick\" data-id=\"" + w.id + "\" aria-label=\"Quitar " + esc(w.texto) + " de las elegidas\">×</button></li>";
+      }).join("") + "</ul></div>";
+    }).join("") : "<p class=\"none\">Aquí aparece tu lista. Toca las palabras que más importan y se añaden solas.</p>";
+    var fb = el.querySelector("textarea"), keepFb = fb && !fb.hidden;
+    var reset = ui.confirmReset
+      ? "<p>Se pierden tus elecciones y cambios.</p><div class=\"row\"><button class=\"btn\" type=\"button\" data-act=\"reset-yes\">Sí, restablecer</button><button class=\"btn link\" type=\"button\" data-act=\"reset-no\">Cancelar</button></div>"
+      : "<button class=\"btn link\" type=\"button\" data-act=\"reset\">Restablecer la pizarra</button>";
+    el.innerHTML = "<h2>Mis elegidas <span class=\"n\">" + p.n + "</span></h2>" + body +
+      "<div class=\"actions\"><button class=\"btn primary\" type=\"button\" data-act=\"copy\"" + (p.n ? "" : " disabled") + ">Copiar lista</button>" +
+      "<button class=\"btn\" type=\"button\" data-act=\"save\"" + (p.n ? "" : " disabled") + ">Guardar .md</button></div>" +
+      "<textarea id=\"copy-fallback\" readonly hidden aria-label=\"Lista para copiar\"></textarea>" +
+      "<div class=\"foot\">" + reset + "</div>";
+    if (keepFb) { var t = el.querySelector("textarea"); t.hidden = false; t.value = p.md; }
+  }
+
+  function toast(msg, undo) {
+    var t = $("#toast"); t.hidden = false; t.innerHTML = "<span>" + esc(msg) + "</span>";
+    if (undo) { var b = document.createElement("button"); b.type = "button"; b.textContent = "Deshacer"; b.onclick = undo; t.appendChild(b); }
+    clearTimeout(toastTimer); toastTimer = setTimeout(hideToast, undo ? 7000 : 5000);
+  }
+  function hideToast() { $("#toast").hidden = true; }
+
+  function openSheet(id) {
+    var w = words()[id]; if (!w) return;
+    editingId = id;
+    $("#ed-texto").value = w.texto;
+    var names = {}; list().forEach(function (x) { if (x.grupo) names[x.grupo] = 1; });
+    var opts = Object.keys(names).sort(function (a, b) { return groupRank(a) - groupRank(b) || a.localeCompare(b, "es"); });
+    $("#ed-grupo").innerHTML = opts.map(function (g) { return "<option value=\"" + esc(g) + "\">" + esc(g) + "</option>"; }).join("") + "<option value=\"\">" + NONE + "</option><option value=\"__nuevo\">+ Grupo nuevo…</option>";
+    $("#ed-grupo").value = w.grupo || "";
+    $("#ed-nuevo-wrap").hidden = true; $("#ed-nuevo").value = "";
+    $("#ed-descartar").hidden = w.estado === "descartada";
+    $("#sheet").hidden = false; $("#ed-texto").focus(); $("#ed-texto").select();
+  }
+  function closeSheet() { $("#sheet").hidden = true; editingId = null; }
+  $("#ed-grupo").addEventListener("change", function () { var n = this.value === "__nuevo"; $("#ed-nuevo-wrap").hidden = !n; if (n) $("#ed-nuevo").focus(); });
+  $("#ed-cancelar").addEventListener("click", closeSheet);
+  $("#sheet").addEventListener("click", function (e) { if (e.target === this) closeSheet(); });
+  $("#ed-descartar").addEventListener("click", function () { var id = editingId; closeSheet(); drop(id); });
+  $("#sheet-form").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var texto = $("#ed-texto").value.trim(), g = $("#ed-grupo").value;
+    if (g === "__nuevo") g = $("#ed-nuevo").value.trim();
+    if (!texto) return;
+    var cur = words()[editingId], ch = {};
+    if (cur.texto !== texto) ch.texto = texto;
+    if ((cur.grupo || "") !== g) ch.grupo = g;
+    var id = editingId; closeSheet();
+    if (Object.keys(ch).length) patch(one(id, ch), "«" + texto + "» guardada" + (ch.grupo !== undefined ? " en " + gname(g) : ""));
+  });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !$("#sheet").hidden) closeSheet(); });
+
+  function one(id, fields) { var o = {}; o[id] = fields; return o; }
+  function drop(id) { var w = words()[id]; if (w) patch(one(id, { estado: "descartada" }), "«" + w.texto + "» descartada"); }
+
+  document.addEventListener("click", function (e) {
+    var t = e.target.closest("[data-act],[data-view],[data-mode]"); if (!t) return;
+    var id = t.dataset.id, w = id ? words()[id] : null;
+    if (t.dataset.view) { ui.view = t.dataset.view; saveUi(); render(); return; }
+    if (t.dataset.mode) { ui.mode = t.dataset.mode; saveUi(); render(); return; }
+    switch (t.dataset.act) {
+      case "pick": if (w) apply(one(id, { estado: w.estado === "elegida" ? "" : "elegida" })); break;
+      case "unpick": if (w) apply(one(id, { estado: "" })); break;
+      case "drop": drop(id); break;
+      case "restore": if (w) patch(one(id, { estado: "" }), "«" + w.texto + "» devuelta a la pizarra"); break;
+      case "edit": openSheet(id); break;
+      case "copy": copyList(); break;
+      case "save": saveList(); break;
+      case "reset": ui.confirmReset = true; render(); break;
+      case "reset-no": ui.confirmReset = false; render(); break;
+      case "reset-yes": ui.confirmReset = false; saved.w = {}; persist(); render(); toast("Pizarra restablecida"); break;
+    }
+  });
+
+  async function copyList() {
+    var p = pickedText(list());
+    try { await navigator.clipboard.writeText(p.md); toast("Lista copiada (" + p.n + " palabras)"); }
+    catch (e) { var t = $("#copy-fallback"); t.hidden = false; t.value = p.md; t.focus(); t.select(); toast("Selecciona el texto y cópialo con Cmd/Ctrl + C"); }
+  }
+  function saveList() {
+    var p = pickedText(list());
+    try {
+      if (downloadUrl) URL.revokeObjectURL(downloadUrl);
+      downloadUrl = URL.createObjectURL(new Blob([p.md], { type: "text/markdown;charset=utf-8" }));
+      var a = document.createElement("a"); a.href = downloadUrl; a.download = "palabras-elegidas-silver-economy.md";
+      document.body.appendChild(a); a.click(); a.remove();
+    } catch (e) { copyList(); }
+  }
+
+  var board = $("#board");
+  board.addEventListener("dragstart", function (e) { var c = e.target.closest && e.target.closest(".chip"); if (!c) return; e.dataTransfer.setData("text/plain", c.dataset.id); e.dataTransfer.effectAllowed = "move"; });
+  board.addEventListener("dragover", function (e) { var g = e.target.closest(".group"); if (!g) return; e.preventDefault(); g.classList.add("over"); });
+  board.addEventListener("dragleave", function (e) { var g = e.target.closest(".group"); if (g && !g.contains(e.relatedTarget)) g.classList.remove("over"); });
+  board.addEventListener("drop", function (e) {
+    var g = e.target.closest(".group"); if (!g) return; e.preventDefault(); g.classList.remove("over");
+    var id = e.dataTransfer.getData("text/plain"), w = words()[id], to = g.getAttribute("data-group");
+    if (w && (w.grupo || "") !== to) patch(one(id, { grupo: to }), "«" + w.texto + "» movida a " + gname(to));
+  });
+
+  $("#q").addEventListener("input", function () { ui.q = this.value; render(); });
+  $("#addform").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var inp = $("#add"), t = inp.value.trim(); if (!t) return;
+    if (list().some(function (w) { return norm(w.texto) === norm(t); })) { toast("«" + t + "» ya está en la pizarra"); return; }
+    var id = "n" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+    apply(one(id, { texto: t, grupo: "", estado: "" }));
+    inp.value = "";
+    toast("«" + t + "» añadida en Sin clasificar. Usa «Organizar» para darle grupo.");
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
