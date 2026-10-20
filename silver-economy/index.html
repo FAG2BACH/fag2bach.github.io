@@ -20,6 +20,8 @@
   --hl-ink: #2A2300;
   --frame: #2D50B8;
   --danger: #B3261E;
+  --ok: #1E7B4F;
+  --warn: #9A5B00;
   --font-display: "Segoe Print", "Bradley Hand", "Marker Felt", "Chalkboard SE", "Comic Sans MS", cursive;
   --font-body: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   color-scheme: light;
@@ -28,7 +30,7 @@
   :root {
     --bg: #12171B; --surface: #1A2127; --chip: #232B32; --line: #2F3A42;
     --fg: #E9EEF0; --muted: #9AA8B0; --hl: #F1D54A; --hl-line: #C9AE28; --hl-ink: #241E00;
-    --frame: #7F9AF2; --danger: #F28B82;
+    --frame: #7F9AF2; --danger: #F28B82; --ok: #5CC48A; --warn: #F0B14A;
     color-scheme: dark;
   }
 }
@@ -52,6 +54,11 @@ button { touch-action: manipulation; }
 .stats { display: flex; flex-wrap: wrap; gap: 4px 16px; color: var(--muted); font-size: 14px; font-variant-numeric: tabular-nums; }
 .stats b { color: var(--fg); font-weight: 600; }
 .stats .hl-n { background: linear-gradient(transparent 55%, var(--hl) 55%); color: var(--fg); font-weight: 600; padding: 0 2px; }
+.sync { margin-top: 6px; display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 13px; }
+.sync::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex: none; }
+.sync.ok::before { background: var(--ok); }
+.sync.warn { color: var(--fg); }
+.sync.warn::before { background: var(--warn); }
 .frame { border: 2px solid var(--frame); color: var(--frame); font-family: var(--font-display); font-weight: 700; padding: 4px 16px 6px; text-align: center; line-height: 1.1; transform: rotate(-1.2deg); }
 .frame span { display: block; font-size: 21px; letter-spacing: .04em; }
 .frame small { display: block; font-size: 19px; }
@@ -111,8 +118,6 @@ button { touch-action: manipulation; }
 .sel-group li button:hover { color: var(--danger); }
 .picked .none { color: var(--muted); font-size: 14px; margin: 0 0 12px; }
 .picked .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
-.picked .foot { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
-.picked .foot p { margin: 0 0 6px; }
 .picked textarea { width: 100%; height: 140px; margin-top: 10px; padding: 8px; background: var(--chip); border: 1px solid var(--line); border-radius: 6px; font-size: 13px; resize: vertical; }
 
 .sheet { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; padding: 16px; background: rgba(8, 12, 14, .5); }
@@ -136,6 +141,7 @@ button { touch-action: manipulation; }
     <div>
       <h1>Pizarra Silver Economy</h1>
       <div class="stats" id="stats" aria-live="polite"></div>
+      <div class="sync" id="sync" aria-live="polite">Conectando con la clase…</div>
     </div>
     <div class="frame" aria-hidden="true"><span>SILVER ECONOMY</span><small>&gt; 55 años</small></div>
   </header>
@@ -187,7 +193,6 @@ button { touch-action: manipulation; }
   "use strict";
   /* Palabras de la pizarra: id -> [palabra, grupo]. El grupo vacío es "Sin clasificar". */
   var BASE = {"w001":["dentadura","Salud y cuerpo"],"w002":["gafas","Salud y cuerpo"],"w003":["vista","Salud y cuerpo"],"w004":["adelgazar","Salud y cuerpo"],"w005":["masajes","Salud y cuerpo"],"w006":["colesterol","Salud y cuerpo"],"w007":["medicamentos","Salud y cuerpo"],"w008":["pastillas","Salud y cuerpo"],"w009":["alzheimer","Salud y cuerpo"],"w010":["psicomotricidad","Salud y cuerpo"],"w011":["hospital","Salud y cuerpo"],"w012":["adicciones","Salud y cuerpo"],"w013":["farmacia","Salud y cuerpo"],"w014":["ozempic","Salud y cuerpo"],"w015":["dolor","Salud y cuerpo"],"w016":["lumbago","Salud y cuerpo"],"w017":["artrosis","Salud y cuerpo"],"w018":["enfermedad","Salud y cuerpo"],"w019":["tratamiento","Salud y cuerpo"],"w020":["dieta","Salud y cuerpo"],"w021":["ejercicio","Salud y cuerpo"],"w022":["engordar","Salud y cuerpo"],"w023":["salud","Salud y cuerpo"],"w024":["pelo","Salud y cuerpo"],"w025":["canas","Salud y cuerpo"],"w026":["injerto","Salud y cuerpo"],"w027":["cuidados","Cuidados y movilidad"],"w028":["asistencia","Cuidados y movilidad"],"w029":["residencia","Cuidados y movilidad"],"w030":["discapacidad","Cuidados y movilidad"],"w031":["conducir","Cuidados y movilidad"],"w032":["desaparición","Cuidados y movilidad"],"w033":["cansancio","Cuidados y movilidad"],"w034":["limitación","Cuidados y movilidad"],"w035":["lentitud","Cuidados y movilidad"],"w036":["muerte","Cuidados y movilidad"],"w037":["movilidad","Cuidados y movilidad"],"w038":["psicotécnico","Cuidados y movilidad"],"w039":["transporte","Cuidados y movilidad"],"w040":["autobús","Cuidados y movilidad"],"w041":["ayudar","Cuidados y movilidad"],"w042":["familia","Familia y relaciones"],"w043":["hijos","Familia y relaciones"],"w044":["hermanos","Familia y relaciones"],"w045":["padres","Familia y relaciones"],"w046":["matrimonio","Familia y relaciones"],"w047":["divorcio","Familia y relaciones"],"w048":["amor","Familia y relaciones"],"w049":["cariño","Familia y relaciones"],"w050":["amistades","Familia y relaciones"],"w051":["compañía","Familia y relaciones"],"w052":["compañerismo","Familia y relaciones"],"w053":["cena familiar","Familia y relaciones"],"w054":["árbol genealógico","Familia y relaciones"],"w055":["cenas","Familia y relaciones"],"w056":["juventud","Familia y relaciones"],"w057":["respeto","Familia y relaciones"],"w058":["lealtad","Familia y relaciones"],"w059":["empatía","Familia y relaciones"],"w060":["amigas","Familia y relaciones"],"w061":["convivencia","Familia y relaciones"],"w062":["generaciones","Familia y relaciones"],"w063":["apoyo","Familia y relaciones"],"w064":["simpatía","Familia y relaciones"],"w065":["reunir","Familia y relaciones"],"w066":["compañer@ de vida","Familia y relaciones"],"w067":["sentir","Emociones y soledad"],"w068":["delicadeza","Emociones y soledad"],"w069":["tranquilidad","Emociones y soledad"],"w070":["pasión","Emociones y soledad"],"w071":["disfrute","Emociones y soledad"],"w072":["descanso","Emociones y soledad"],"w073":["adaptación","Emociones y soledad"],"w074":["desesperación","Emociones y soledad"],"w075":["recuerdos","Emociones y soledad"],"w076":["mentalidad","Emociones y soledad"],"w077":["fortaleza","Emociones y soledad"],"w078":["happy people","Emociones y soledad"],"w079":["soledad","Emociones y soledad"],"w080":["aislados","Emociones y soledad"],"w081":["nostalgia","Emociones y soledad"],"w082":["desconexión","Emociones y soledad"],"w083":["relax","Emociones y soledad"],"w084":["positividad","Emociones y soledad"],"w085":["resiliencia","Emociones y soledad"],"w086":["amplitud","Emociones y soledad"],"w087":["pensiones","Dinero y trámites"],"w088":["subsidios","Dinero y trámites"],"w089":["pobreza","Dinero y trámites"],"w090":["burocracia","Dinero y trámites"],"w091":["propietario","Dinero y trámites"],"w092":["vivienda","Dinero y trámites"],"w093":["jubilación","Dinero y trámites"],"w094":["testamento","Dinero y trámites"],"w095":["cesta de la compra","Dinero y trámites"],"w096":["ahorros","Dinero y trámites"],"w097":["inversión","Dinero y trámites"],"w098":["subvenciones","Dinero y trámites"],"w099":["dinero","Dinero y trámites"],"w100":["riqueza","Dinero y trámites"],"w101":["estafados","Dinero y trámites"],"w102":["retiro","Dinero y trámites"],"w103":["riesgo","Dinero y trámites"],"w104":["herencia","Dinero y trámites"],"w105":["experiencia","Experiencia y saber"],"w106":["conocimiento","Experiencia y saber"],"w107":["sabiduría","Experiencia y saber"],"w108":["mentoría","Experiencia y saber"],"w109":["maestros","Experiencia y saber"],"w110":["enseñanzas","Experiencia y saber"],"w111":["enseñar","Experiencia y saber"],"w112":["consejos","Experiencia y saber"],"w113":["observación","Experiencia y saber"],"w114":["actualización","Experiencia y saber"],"w115":["idiomas","Experiencia y saber"],"w116":["lectura","Experiencia y saber"],"w117":["referentes","Experiencia y saber"],"w118":["expertos","Experiencia y saber"],"w119":["consultores","Experiencia y saber"],"w120":["líder","Experiencia y saber"],"w121":["formación","Experiencia y saber"],"w122":["memoria","Experiencia y saber"],"w123":["enciclopedia","Experiencia y saber"],"w124":["literatura","Experiencia y saber"],"w125":["refranes","Experiencia y saber"],"w126":["recomendación","Experiencia y saber"],"w127":["ejemplo","Experiencia y saber"],"w128":["veteranía","Experiencia y saber"],"w129":["criterio","Experiencia y saber"],"w130":["objetividad","Experiencia y saber"],"w131":["argumentos","Experiencia y saber"],"w132":["discusiones","Experiencia y saber"],"w133":["botánica","Experiencia y saber"],"w134":["morfología","Experiencia y saber"],"w135":["autoconocimiento","Experiencia y saber"],"w136":["senior","Experiencia y saber"],"w137":["legado","Experiencia y saber"],"w138":["vivencias","Experiencia y saber"],"w139":["carácter","Experiencia y saber"],"w140":["personalización","Trabajo y emprender"],"w141":["trabajo","Trabajo y emprender"],"w142":["compromiso","Trabajo y emprender"],"w143":["responsabilidad","Trabajo y emprender"],"w144":["organización","Trabajo y emprender"],"w145":["innovar","Trabajo y emprender"],"w146":["inventos","Trabajo y emprender"],"w147":["experimentar","Trabajo y emprender"],"w148":["problemas","Trabajo y emprender"],"w149":["tecnologías","Tecnología y servicios"],"w150":["compra online","Tecnología y servicios"],"w151":["servicios","Tecnología y servicios"],"w152":["rapidez","Tecnología y servicios"],"w153":["móvil","Tecnología y servicios"],"w154":["redes","Tecnología y servicios"],"w155":["seguridad","Tecnología y servicios"],"w156":["cerveza","Comida y bar"],"w157":["chupitos","Comida y bar"],"w158":["palillo","Comida y bar"],"w159":["queso","Comida y bar"],"w160":["matcha","Comida y bar"],"w161":["croquetas","Comida y bar"],"w162":["vino","Comida y bar"],"w163":["cocinar","Comida y bar"],"w164":["gastronomía","Comida y bar"],"w165":["vaso de tubo","Comida y bar"],"w166":["recetas","Comida y bar"],"w167":["pan","Comida y bar"],"w168":["alimentar","Comida y bar"],"w169":["bar","Comida y bar"],"w170":["Julio Iglesias","Ocio y cultura popular"],"w171":["Rafael","Ocio y cultura popular"],"w172":["crucero","Ocio y cultura popular"],"w173":["clubs","Ocio y cultura popular"],"w174":["ajedrez","Ocio y cultura popular"],"w175":["juegos","Ocio y cultura popular"],"w176":["bicicleta","Ocio y cultura popular"],"w177":["hobbies","Ocio y cultura popular"],"w178":["ocio","Ocio y cultura popular"],"w179":["Benidorm","Ocio y cultura popular"],"w180":["Dc10","Ocio y cultura popular"],"w181":["deporte","Ocio y cultura popular"],"w182":["tauromaquia","Ocio y cultura popular"],"w183":["flamenco","Ocio y cultura popular"],"w184":["Lola Flores","Ocio y cultura popular"],"w185":["telenovela","Ocio y cultura popular"],"w186":["siesta","Ocio y cultura popular"],"w187":["viajes","Ocio y cultura popular"],"w188":["petanca","Ocio y cultura popular"],"w189":["caza","Ocio y cultura popular"],"w190":["coser","Ocio y cultura popular"],"w191":["cartas","Ocio y cultura popular"],"w192":["arte","Ocio y cultura popular"],"w193":["balneario","Ocio y cultura popular"],"w194":["agricultura","Pueblo y rural"],"w195":["pueblos","Pueblo y rural"],"w196":["campo","Pueblo y rural"],"w197":["rural","Pueblo y rural"],"w198":["España","Pueblo y rural"],"w199":["España vaciada","Pueblo y rural"],"w200":["despoblación","Pueblo y rural"],"w201":["emigración","Pueblo y rural"],"w202":["población","Pueblo y rural"],"w203":["Castilla y León","Pueblo y rural"],"w204":["abastecimiento","Pueblo y rural"],"w205":["política","Sociedad y política"],"w206":["justicia","Sociedad y política"],"w207":["ideología","Sociedad y política"],"w208":["terrorismo","Sociedad y política"],"w209":["jerarquía","Sociedad y política"],"w210":["violencia","Sociedad y política"],"w211":["imperio","Sociedad y política"],"w212":["DIOS","Tradiciones y fe"],"w213":["tradición","Tradiciones y fe"],"w214":["costumbres","Tradiciones y fe"],"w215":["cultura","Tradiciones y fe"],"w216":["Semana Santa","Tradiciones y fe"],"w217":["rutina","Tradiciones y fe"],"w218":["expresiones","Tradiciones y fe"],"w219":["Nochevieja","Tradiciones y fe"],"w220":["fe","Tradiciones y fe"],"w221":["religión","Tradiciones y fe"],"w222":["cristianismo","Tradiciones y fe"],"w223":["pecado","Tradiciones y fe"],"w224":["capitán",""],"w225":["tiempo",""],"w226":["tacón",""],"w227":["únicos",""]};
-  var KEY = "fag2bach-silver-economy-v1";
   var GROUP_ORDER = ["Salud y cuerpo", "Cuidados y movilidad", "Familia y relaciones", "Emociones y soledad", "Dinero y trámites", "Experiencia y saber", "Trabajo y emprender", "Tecnología y servicios", "Comida y bar", "Ocio y cultura popular", "Pueblo y rural", "Sociedad y política", "Tradiciones y fe"];
   var NONE = "Sin clasificar";
 
@@ -196,29 +201,38 @@ button { touch-action: manipulation; }
   var norm = function (s) { return String(s).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim(); };
   var gname = function (g) { return g || NONE; };
 
-  /* Lo que cambia la persona (estado, grupo, texto, palabras nuevas) se guarda en este navegador. */
-  var saved = { w: {}, ui: {} }, canStore = true, warned = false;
-  try { var raw = localStorage.getItem(KEY); if (raw) saved = JSON.parse(raw) || saved; } catch (e) { canStore = false; }
-  saved.w = saved.w || {}; saved.ui = saved.ui || {};
-  function persist() {
-    try { localStorage.setItem(KEY, JSON.stringify(saved)); }
-    catch (e) { canStore = false; if (!warned) { warned = true; toast("Este navegador no permite guardar. Copia o descarga tu lista antes de cerrar."); } }
-  }
-
-  var ui = { view: saved.ui.view || "todas", mode: saved.ui.mode || "elegir", q: "", confirmReset: false };
+  /* La pizarra es compartida: el estado vive en un servidor (Cloudflare Worker + D1) y lo ve toda la clase.
+     En el navegador solo se guarda la vista elegida y los cambios que aún no se han podido enviar. */
+  var API = "https://silver-economy.beltranfersan.workers.dev/api";
+  var KEY_UI = "fag2bach-silver-economy-v1";
+  var KEY_PEND = "fag2bach-silver-economy-pendiente";
+  var saved = { ui: {} }, oldChanges = null;
+  try {
+    var raw = localStorage.getItem(KEY_UI), parsed = raw ? JSON.parse(raw) : null;
+    if (parsed) { saved.ui = parsed.ui || {}; if (parsed.w && Object.keys(parsed.w).length) oldChanges = parsed.w; }
+  } catch (e) {}
+  var ui = { view: saved.ui.view || "todas", mode: saved.ui.mode || "elegir", q: "" };
   var editingId = null, toastTimer = null, downloadUrl = null;
+  function saveUi() { try { localStorage.setItem(KEY_UI, JSON.stringify({ ui: { view: ui.view, mode: ui.mode } })); } catch (e) {} }
+
+  var server = {}, pending = {}, inflight = {}, maxT = 0, loadedOnce = false, online = null;
+  Object.keys(BASE).forEach(function (id) { server[id] = { texto: BASE[id][0], grupo: BASE[id][1], estado: "" }; });
+  try { pending = JSON.parse(localStorage.getItem(KEY_PEND) || "{}") || {}; } catch (e) { pending = {}; }
+  if (oldChanges) { for (var oid in oldChanges) pending[oid] = Object.assign({}, oldChanges[oid], pending[oid]); }
+  function persistPending() { try { localStorage.setItem(KEY_PEND, JSON.stringify(pending)); } catch (e) {} }
+  if (oldChanges) { persistPending(); saveUi(); }
 
   function words() {
     var out = {}, id;
-    for (id in BASE) out[id] = { texto: BASE[id][0], grupo: BASE[id][1], estado: "" };
-    for (id in saved.w) out[id] = Object.assign({}, out[id], saved.w[id]);
+    [server, inflight, pending].forEach(function (layer) { for (id in layer) out[id] = Object.assign({}, out[id], layer[id]); });
+    for (id in out) if (typeof out[id].texto !== "string") delete out[id];
     return out;
   }
   function list() { var w = words(); return Object.keys(w).map(function (id) { return Object.assign({ id: id }, w[id]); }); }
 
   function apply(changes) {
-    for (var id in changes) saved.w[id] = Object.assign(saved.w[id] || {}, changes[id]);
-    persist(); render();
+    for (var id in changes) pending[id] = Object.assign(pending[id] || {}, changes[id]);
+    persistPending(); render(); touch(); scheduleFlush(300);
   }
   function patch(changes, message) {
     var cur = words(), prev = {};
@@ -226,7 +240,69 @@ button { touch-action: manipulation; }
     apply(changes);
     if (message) toast(message, function () { apply(prev); hideToast(); });
   }
-  function saveUi() { saved.ui = { view: ui.view, mode: ui.mode }; persist(); }
+
+  /* envío: se agrupan los cambios y, si falla la red, se reintenta con espera creciente */
+  var flushing = false, flushTimer = null, retryMs = 3000;
+  function scheduleFlush(ms) { clearTimeout(flushTimer); flushTimer = setTimeout(flush, ms); }
+  async function flush() {
+    if (flushing || !Object.keys(pending).length) return;
+    flushing = true;
+    var ids = Object.keys(pending).slice(0, 50);
+    ids.forEach(function (id) { inflight[id] = pending[id]; delete pending[id]; });
+    var ok = false;
+    try {
+      var r = await fetch(API + "/cambios", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ cambios: inflight }) });
+      if (r.status === 400 || r.status === 409 || r.status === 413) { inflight = {}; toast("El servidor no aceptó ese cambio."); ok = true; }
+      else if (!r.ok) throw new Error("http " + r.status);
+      else { for (var id in inflight) server[id] = Object.assign({}, server[id], inflight[id]); inflight = {}; ok = true; }
+      retryMs = 3000; setOnline(true);
+    } catch (e) {
+      for (var j in inflight) pending[j] = Object.assign({}, inflight[j], pending[j]);
+      inflight = {}; setOnline(false); scheduleFlush(retryMs); retryMs = Math.min(retryMs * 2, 30000);
+    }
+    flushing = false; persistPending(); render();
+    if (ok && Object.keys(pending).length) scheduleFlush(300);
+  }
+
+  /* lectura: cada pocos segundos mientras haya actividad; se duerme sola si nadie toca nada */
+  var pollTimer = null, pollMs = 6000, lastActivity = Date.now(), sleeping = false;
+  function touch() {
+    lastActivity = Date.now(); pollMs = Math.min(pollMs, 6000);
+    if (sleeping) { sleeping = false; poll(); }
+  }
+  async function poll() {
+    clearTimeout(pollTimer);
+    if (document.hidden) return;
+    if (Date.now() - lastActivity > 5 * 60 * 1000) { sleeping = true; return; }
+    try {
+      var r = await fetch(API + "/estado?desde=" + (loadedOnce ? Math.max(1, maxT - 5000) : 0));
+      if (!r.ok) throw new Error("http " + r.status);
+      var d = await r.json(), changed = !loadedOnce;
+      d.filas.forEach(function (f) {
+        if (f.t > maxT) maxT = f.t;
+        var cur = server[f.id];
+        if (!cur || cur.texto !== f.texto || cur.grupo !== f.grupo || cur.estado !== f.estado) { server[f.id] = { texto: f.texto, grupo: f.grupo, estado: f.estado }; changed = true; }
+      });
+      loadedOnce = true; setOnline(true);
+      if (changed) { render(); pollMs = 6000; } else pollMs = Math.min(Math.round(pollMs * 1.5), 30000);
+    } catch (e) { setOnline(false); pollMs = Math.min(pollMs * 2, 30000); }
+    pollTimer = setTimeout(poll, pollMs);
+  }
+  function setOnline(v) { if (online !== v) { online = v; renderSync(); } }
+  function renderSync() {
+    var el = $("#sync"), n = Object.keys(pending).length + Object.keys(inflight).length;
+    el.className = "sync " + (online === false ? "warn" : online ? "ok" : "");
+    el.textContent = online === null ? "Conectando con la clase…"
+      : online === false ? "Sin conexión" + (n ? ": " + n + (n === 1 ? " cambio espera" : " cambios esperan") + " para enviarse" : ". Se reintenta solo")
+      : "Compartida con toda la clase. Se actualiza sola.";
+  }
+  function arranque() {
+    ["pointerdown", "keydown", "input"].forEach(function (ev) { document.addEventListener(ev, touch, { passive: true }); });
+    document.addEventListener("visibilitychange", function () { if (!document.hidden) { sleeping = false; lastActivity = Date.now(); poll(); } });
+    window.addEventListener("online", function () { scheduleFlush(200); poll(); });
+    poll();
+    if (Object.keys(pending).length) scheduleFlush(600);
+  }
 
   function visible(w) {
     var s = w.estado || "";
@@ -260,9 +336,10 @@ button { touch-action: manipulation; }
     $("#hint").textContent = ui.view === "descartadas"
       ? "Estas palabras están fuera del juego. Toca una para devolverla."
       : ui.mode === "elegir"
-        ? "Toca una palabra para elegirla (se marca en amarillo). La × la descarta. Tus cambios se guardan en este navegador."
+        ? "Toca una palabra para elegirla (se marca en amarillo). La × la descarta. Lo que cambies lo ve toda la clase."
         : "Toca una palabra para editarla o cambiarla de grupo. En ordenador también puedes arrastrarla a otro grupo.";
 
+    renderSync();
     renderBoard(all);
     renderPicked(all);
     if (keep) { var el = document.querySelector("[data-act=\"" + keep.act + "\"][data-id=\"" + keep.id + "\"]"); if (el) el.focus(); }
@@ -306,14 +383,10 @@ button { touch-action: manipulation; }
       }).join("") + "</ul></div>";
     }).join("") : "<p class=\"none\">Aquí aparece tu lista. Toca las palabras que más importan y se añaden solas.</p>";
     var fb = el.querySelector("textarea"), keepFb = fb && !fb.hidden;
-    var reset = ui.confirmReset
-      ? "<p>Se pierden tus elecciones y cambios.</p><div class=\"row\"><button class=\"btn\" type=\"button\" data-act=\"reset-yes\">Sí, restablecer</button><button class=\"btn link\" type=\"button\" data-act=\"reset-no\">Cancelar</button></div>"
-      : "<button class=\"btn link\" type=\"button\" data-act=\"reset\">Restablecer la pizarra</button>";
     el.innerHTML = "<h2>Mis elegidas <span class=\"n\">" + p.n + "</span></h2>" + body +
       "<div class=\"actions\"><button class=\"btn primary\" type=\"button\" data-act=\"copy\"" + (p.n ? "" : " disabled") + ">Copiar lista</button>" +
       "<button class=\"btn\" type=\"button\" data-act=\"save\"" + (p.n ? "" : " disabled") + ">Guardar .md</button></div>" +
-      "<textarea id=\"copy-fallback\" readonly hidden aria-label=\"Lista para copiar\"></textarea>" +
-      "<div class=\"foot\">" + reset + "</div>";
+      "<textarea id=\"copy-fallback\" readonly hidden aria-label=\"Lista para copiar\"></textarea>";
     if (keepFb) { var t = el.querySelector("textarea"); t.hidden = false; t.value = p.md; }
   }
 
@@ -370,9 +443,6 @@ button { touch-action: manipulation; }
       case "edit": openSheet(id); break;
       case "copy": copyList(); break;
       case "save": saveList(); break;
-      case "reset": ui.confirmReset = true; render(); break;
-      case "reset-no": ui.confirmReset = false; render(); break;
-      case "reset-yes": ui.confirmReset = false; saved.w = {}; persist(); render(); toast("Pizarra restablecida"); break;
     }
   });
 
@@ -413,6 +483,7 @@ button { touch-action: manipulation; }
   });
 
   render();
+  arranque();
 })();
 </script>
 </body>
