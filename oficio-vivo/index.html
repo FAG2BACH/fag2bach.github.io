@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex, nofollow">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://api.dicebear.com; connect-src 'self'; base-uri 'none'; form-action 'none'">
+<meta name="description" content="Mentoría entre generaciones en Zamora: personas mayores con oficio enseñan a jóvenes. Gratis para quien aprende.">
+<meta name="theme-color" content="#FBF6EE">
+<title>Oficio Vivo · Mentoría entre generaciones</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='10' y='6' width='44' height='52' rx='3' fill='%23fff' stroke='%2324201C' stroke-width='3'/%3E%3Crect x='16' y='12' width='32' height='30' fill='%23D2553F'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Caveat:wght@500;700&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+<a class="salto" href="#app">Saltar al contenido</a>
+<div class="ayuda"><div class="wrap">
+  <span>¿Necesitas ayuda? Llama gratis al <b data-telefono>900 000 000</b> · de lunes a viernes, de 10 a 14 h</span>
+  <div class="letra" role="group" aria-label="Tamaño de letra">
+    <span>Letra</span>
+    <button type="button" data-action="letra" data-nivel="0" aria-pressed="true" aria-label="Letra normal">A</button>
+    <button type="button" data-action="letra" data-nivel="1" aria-pressed="false" aria-label="Letra grande">A</button>
+    <button type="button" data-action="letra" data-nivel="2" aria-pressed="false" aria-label="Letra muy grande">A</button>
+  </div>
+</div></div>
+<header class="cabecera"><div class="wrap">
+  <a class="logo" href="#/">Oficio <i>Vivo</i></a>
+  <button class="abre-menu" type="button" data-action="menu" aria-expanded="false" aria-controls="menu">Menú</button>
+  <nav class="menu" id="menu" aria-label="Principal">
+    <a href="#/buscar" data-ruta="buscar">Buscar mentor</a>
+    <a href="#/hazte-mentor" data-ruta="hazte-mentor">Hazte mentor</a>
+    <a href="#/entidades" data-ruta="entidades">Colegios y entidades</a>
+    <a href="#/podcast" data-ruta="podcast">Podcast</a>
+  </nav>
+  <a class="btn borde entrar" href="#/hazte-mentor">Quiero enseñar</a>
+</div></header>
+
+<main id="app" tabindex="-1"></main>
+
+<footer class="pie-pagina"><div class="wrap">
+  <div>
+    <a class="logo" href="#/">Oficio <i>Vivo</i></a>
+    <p style="color:var(--ink-2);max-width:26em">Mentoría entre generaciones en Zamora y provincia. Mayores con oficio enseñan a jóvenes que quieren aprender.</p>
+  </div>
+  <div><h3>La web</h3><ul>
+    <li><a href="#/buscar">Buscar mentor</a></li><li><a href="#/hazte-mentor">Hazte mentor</a></li>
+    <li><a href="#/entidades">Colegios y entidades</a></li><li><a href="#/podcast">Podcast</a></li>
+  </ul></div>
+  <div><h3>Contacto</h3><ul>
+    <li>Teléfono: <span data-telefono>900 000 000</span></li><li>Zamora</li>
+    <li><a href="#/panel">Panel de organizadores</a></li>
+  </ul></div>
+  <div class="legal"><span>Oficio Vivo (nombre provisional) · Proyecto Silver Economy</span><span data-version>Prototipo con datos de ejemplo</span></div>
+</div></footer>
+<div class="toast" role="status" aria-live="polite" id="toast"></div>
+<script src="datos.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
